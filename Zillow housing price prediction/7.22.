@@ -1,0 +1,101 @@
+setwd('E:/coding rescources/Kaggle/Zillow_price_prediction')
+Sys.setlocale("LC_ALL","Chinese")
+#install.packages('stringr')
+#install.packages('DT')
+#install.packages('tidyr')
+#install.packages('corrplot')
+#install.packages('leaflet')
+#install.packages('lubridate')
+#install.packages('data.table')
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(DT)
+library(tidyr)
+library(corrplot)
+library(leaflet)
+library(lubridate)
+library(data.table)
+
+#load the data
+properties<-fread('properties_2016.csv')
+transactions <-fread('train_2016_v2.csv')
+sample_submission<-fread('sample_submission.csv')
+使用data.table里的fread() function能更快的导入数据。
+
+
+
+一共有三个dataset:properties,transactions,sample_submission。
+其中properties dataset主要是关于房子的基本情况、性能的介绍的dataset，所以是我们主要分析的dataset。
+而transactions dataset是关于转卖记录的dataset。
+sample_submssion就是希望我们能得到六个时间点（201610，201611，201612，201710，201711，201712）的log(error).
+其中log(error)=log(estimated)-log(true).
+
+#rename the dataset
+#为了便于理解，就把一部分不好理解的colnames用rename function来重新名。
+#data%>%rename(newname=oldname)
+
+properties <- properties %>% rename(
+  id_parcel = parcelid,
+  build_year = yearbuilt,
+  area_basement = basementsqft,
+  area_patio = yardbuildingsqft17,
+  area_shed = yardbuildingsqft26, 
+  area_pool = poolsizesum,  
+  area_lot = lotsizesquarefeet, 
+  area_garage = garagetotalsqft,
+  area_firstfloor_finished = finishedfloor1squarefeet,
+  area_total_calc = calculatedfinishedsquarefeet,
+  area_base = finishedsquarefeet6,
+  area_live_finished = finishedsquarefeet12,
+  area_liveperi_finished = finishedsquarefeet13,
+  area_total_finished = finishedsquarefeet15,  
+  area_unknown = finishedsquarefeet50,
+  num_unit = unitcnt, 
+  num_story = numberofstories,  
+  num_room = roomcnt,
+  num_bathroom = bathroomcnt,
+  num_bedroom = bedroomcnt,
+  num_bathroom_calc = calculatedbathnbr,
+  num_bath = fullbathcnt,  
+  num_75_bath = threequarterbathnbr, 
+  num_fireplace = fireplacecnt,
+  num_pool = poolcnt,  
+  num_garage = garagecarcnt,  
+  region_county = regionidcounty,
+  region_city = regionidcity,
+  region_zip = regionidzip,
+  region_neighbor = regionidneighborhood,  
+  tax_total = taxvaluedollarcnt,
+  tax_building = structuretaxvaluedollarcnt,
+  tax_land = landtaxvaluedollarcnt,
+  tax_property = taxamount,
+  tax_year = assessmentyear,
+  tax_delinquency = taxdelinquencyflag,
+  tax_delinquency_year = taxdelinquencyyear,
+  zoning_property = propertyzoningdesc,
+  zoning_landuse = propertylandusetypeid,
+  zoning_landuse_county = propertycountylandusecode,
+  flag_fireplace = fireplaceflag, 
+  flag_tub = hashottuborspa,
+  quality = buildingqualitytypeid,
+  framing = buildingclasstypeid,
+  material = typeconstructiontypeid,
+  deck = decktypeid,
+  story = storytypeid,
+  heating = heatingorsystemtypeid,
+  aircon = airconditioningtypeid,
+  architectural_style= architecturalstyletypeid
+)
+transactions <- transactions %>% rename(id_parcel = parcelid,date = transactiondate)
+#其中，在properties这个data set 中，尤其需要注意的是三个variable:tax_delinquery,flag_tub,flag_fireplace.这三个variable，要不就是Y，要不就是空值。
+#为了更好的使用这三个variable,我们需要把它变成binary,0/1.
+#使用dplyr package的 piping 和mutate function。
+#data%>%mutate(tax_delinquery=ifesle(tax_delinquery=='Y',1,0))，就把原来的变量变成了0/1变量。但是还需要注意的是，如果新加了一个变量名，如：
+#data%>%mutate(x=ifesle(tax_delinquery=='Y',1,0))的话，那就会形成一个新的variable:x,x是tax_delinquery 的0/1 变量，而原来的tax_delinquery
+#依然存在。
+
+properties<-properties%>%mutate(
+                      tax_delinquency=ifelse(tax_delinquency=="Y",1,0),
+                      flag_fireplace=ifelse(flag_fireplace=='Y',1,0),
+                      flag_tub=ifelse(flag_tub=='Y',1,0))
