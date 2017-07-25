@@ -1,0 +1,26 @@
+###################################################data visualation######################################################
+#histogram for logerror
+hist(transactions$logerror)
+resplot<-ggplot(data=transactions,aes(x=logerror,y=..count..))+geom_histogram(bins = 400,color='black',fill='red')+
+  coord_cartesian(xlim=c(-0.5,0.5))+labs(title = "Density Plot For logerror")+theme(plot.title = element_text(size=20,hjust = 0.5,),axis.title = element_text(size = 15))
+resplot
+#histogram for transaction in 12 months.
+transactions<-transactions%>%mutate(months=make_date(year(date),month(date)))
+histpermonth<-ggplot(transactions,aes(x=months))+geom_bar(fill="green",color='red',alpha=0.3)+
+  ggtitle("Histogram for logerror per month")+
+  theme(plot.title = element_text(hjust=0.5,size=20),axis.title = element_text(size=15))+geom_vline(xintercept = 10,size=1.5,color="red")
+histpermonth
+
+#absoluet logerror change over time
+abserrmean<-transactions%>%mutate(abserr=abs(logerror))%>%group_by(months)%>%summarize(errmean=mean(abserr))
+errmeanplot<-ggplot(abserrmean,aes(months,errmean))+geom_line(color='red',size=2)+ggtitle('Mean abslogerror VS time')+
+  theme(axis.title = element_text(size=15),plot.title =element_text(size=20,hjust=0.5))+labs(y='Mean_AbsLogerror')+
+  geom_point(size=4,color='purple')
+errmeanplot
+
+#logerror change over time
+head(transactions)
+errmean<-transactions%>%group_by(months)%>%summarise(meanlogerr=mean(logerror))
+errmeanplot<-ggplot(errmean,aes(months,meanlogerr))+geom_line(color='red',size=2)+geom_point(color='purple',size=4)+
+  ggtitle('Mean Logerror VS time')+theme(plot.title = element_text(size=20,hjust=0.5),axis.title = element_text(size = 15))
+errmeanplot
