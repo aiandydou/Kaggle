@@ -1,0 +1,8 @@
+#See how much missing proportation have been taken for each feature.
+num_missing<-rep(0,58)
+for (i in 1:58){
+  num_missing[i]=(sum(is.na(properties[,i]))/length(properties[,1]))}
+names=c(as.character(colnames(properties)))
+missing_pro<-data.table(cbind(num_missing,names))
+missing_pro<-missing_pro[order(num_missing),]
+ggplot(data=missing_pro,aes(x=names,y=num_missing)+geom_bar(stat='identity')
