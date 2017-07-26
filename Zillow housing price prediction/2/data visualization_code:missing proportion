@@ -1,0 +1,24 @@
+####to draw how much data have been missed for each variable.
+missing_values<-properties%>%summarise_each(funs(sum(is.na(.)/n())))
+missing_values<-missing_values%>%gather(key='features',value='missing_prop')
+missing_prop_plot<-ggplot(missing_values,aes(x=reorder(features,-missing_prop),y=missing_prop))+
+    geom_bar(stat="identity",fill="red")+coord_flip()
+
+#这段code里面主要用了3个package:dplyr,tidyr,ggplot2
+
+#summarise_each(funs()):能够对每个feature 进行summarise,然后summarise的就方法就是里面的funs()参数：首先计算每个feature共有多少空值，
+然后算算它所占的比率。
+
+#gather() 是tidyr package 中把wide format变成long format的一个function.这样就形成了两个columns: features and missing_prop,然后对着两个variable
+进行画图。
+
+#tidyr四个有用的functions:
+  gather:变wide format data 为long format data;
+  spread:变long format data 为wide format data;
+  separate:拆一个variable 为两个variable;
+  unite：变两个variable为一个variable.
+  
+#ggplot()画图过程中要注意几个问题：1.x轴是我们想要的features,y轴是missing的数值。如果我们不使用reorder(features,-missing_prop)的话，那画的图就是遵照
+原来的features顺序，那图就会比较乱。而用reorder()之后，x轴就是按照missing_prop的逆排序进行的，同时，y=missing_prop也会跟着一起变。
+2.在geom_bar()里面，sata='identity'必须地加，否则会报错。
+3.coord_flip()会把x/y轴的图像掉一个顺序，这样图片会更好看，否则，所有的feature都聚集在一起，看不起feature 名字，会不好看。
