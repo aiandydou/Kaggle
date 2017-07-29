@@ -1,0 +1,147 @@
+#####################不够好的code######################
+# The first version:
+#目标：取出包含num的good feature,然后对这些good feature 画correlation 图？
+vars<-good_feature%>%spread(key='features',value='missing_pro')%>%select(contains('num'))
+wholedata<-merge(properties,transactions,by='id_parcel') #the data contains 2 datasets,mainly based on properties data set
+wholedata%>%mutate(abslogerror=abs(logerror))
+num_data<-wholedata[,colnames(wholedata)%in%colnames(vars)]
+abslogerrdata<-wholedata[,colnames(wholedata)=='abslogerror']
+num_data<-cbind(num_data,abslogerrdata)
+num_cor_plot<-num_data%>%cor(use='pairwise.complete.obs')%>%corrplot(method='circle',type='lower')
+
+#目标：取出包含area的good feature,然后对这些area_good_feature 画correlation 图
+vars1<-good_feature%>%spread(key='features',value='missing_pro')%>%select(contains('area'))
+area_data<-wholedata[,colnames(wholedata)%in%colnames(vars1)]
+area_data<-cbind(area_data,abslogerrdata)
+area_cor_plot<-area_data%>%cor(use='pairwise.complete.obs')%>%corrplot(method='circle',type='lower')
+
+#目标：取出包含tax的good feature,然后对这些area_good_feature 画correlation 图
+vars2<-good_feature%>%spread(key='features',value='missing_pro')%>%select(contains('tax'))
+tax_data<-wholedata[,colnames(wholedata)%in%colnames(vars2)]
+tax_data<-cbind(tax_data,abslogerrdata)
+tax_data%>%select(-tax_year)
+tax_cor_plot<-tax_data%>%cor(use='pairwise.complete.obs')%>%corrplot(method='circle',type='lower')
+
+
+#####################调整了之后的code###################
+#The second version:
+#####correlation plot between features with abslogerror
+#目标：先选出一个单独的abologerror的feature
+wholedata<-merge(properties,transactions,by='id_parcel')
+wholedata<-wholedata%>%mutate(abslogerror=abs(logerror))
+abslogerr<-wholedata%>%select(abslogerror)
+
+#目标：取出包含num的good feature,然后加上abslogerror 这个feature,然后画各个feature的correlation图。(abslogerror)
+num<-good_feature%>%spread(key='features',value='missing_pro')%>%select(contains('num'))
+num_data<-wholedata[,colnames(wholedata)%in%colnames(num)]
+num_cor<-bind_cols(num_data,abslogerr)%>%cor(use='complete.obs')
+num_cor
+num_corr_plot<-bind_cols(num_data,abslogerr)%>%cor(use='complete.obs')%>%corrplot(method='circle',type='lower')
+
+#目标：取出包含area的good feature,然后加上abslogerror 这个feature,然后画各个feature的correlation图。(abslogerror)
+area<-good_feature%>%spread(key='features',value='missing_pro')%>%select(contains('area'))
+area_data<-wholedata[,colnames(wholedata)%in%colnames(vars1)]
+area_cor<-bind_cols(area_data,abslogerr)%>%cor(use='complete.obs')
+area_cor_plot<-bind_cols(area_data,abslogerr)%>%cor(use='complete.obs')
+      %>%corrplot(method='circle',type='lower')
+
+#目标：取出包含tax的good feature,然后加上abslogerror 这个feature,然后画各个feature的correlation图。(abslogerror)
+tax<-good_feature%>%spread(key='features',value='missing_pro')%>%select(contains('tax'))
+tax_data<-wholedata[,colnames(wholedata)%in%colnames(tax)]
+tax_cor<-bind_cols(tax_data,abslogerr)%>%select(-tax_year)%>%cor(use='complete.obs')
+tax_cor
+tax_cor_plot<-bind_cols(tax_data,abslogerr)%>%select(-tax_year)%>%
+  cor(use='complete.obs')%>%corrplot(method='circle',type='lower')
+  
+##########correlation plot between features with logerror
+#目标：先选出一个单独的abologerror的feature
+logerr<-wholedata%>%select(logerror)
+#目标：取出包含num的good feature,然后加上logerror 这个feature,然后画各个feature的correlation图。
+num_cor1<-bind_cols(num_data,logerr)%>%cor(use='pairwise.complete.obs')
+num_corr_plot1<-bind_cols(num_data,logerr)%>%cor(use='complete.obs')%>%corrplot(method='circle',type='lower')
+num_corr_plot1
+#目标：取出包含area的good feature,然后加上logerror 这个feature,然后画各个feature的correlation图。
+area_cor1<-bind_cols(area_data,logerr)%>%cor(use='pairwise.complete.obs')
+area_cor_plot1<-bind_cols(area_data,logerr)%>%cor(use='pairwise.complete.obs')%>%corrplot(method='circle',type='lower')
+#目标：取出包含tax的good feature,然后加上logerror 这个feature,然后画各个feature的correlation图。
+tax_cor1<-bind_cols(tax_data,logerr)%>%select(-tax_year)%>%cor(use='pairwise.complete.obs')
+tax_cor_plot1<-bind_cols(tax_data,logerr)%>%select(-tax_year)%>%
+  cor(use='pairwise.complete.obs')%>%corrplot(method='circle',type='lower')  
+  
+  
+  
+############################################别人写的code######################################
+#num 相关feature的correlation图（abslogerror）
+vars <- good_features$feature[str_detect(good_features$feature,'num_')]
+cor_tmp <- transactions %>% left_join(properties, by="id_parcel") 
+tmp <- cor_tmp %>% select(one_of(c(vars,"abs_logerror")))
+corrplot(cor(tmp, use="complete.obs"),type="lower")
+
+#area相关的feature的correlation图(abslogerror)
+vars <- good_features$feature[str_detect(good_features$feature,'area_')]
+tmp <- cor_tmp %>% select(one_of(c(vars,"abs_logerror")))
+corrplot(cor(tmp, use="complete.obs"), type="lower")
+
+#tax相关的feature的correlation图(abslogerror)
+vars <- setdiff(good_features$feature[str_detect(good_features$feature,'tax_')],c("tax_delinquency","tax_year"))
+tmp <- cor_tmp %>% select(one_of(c(vars,"abs_logerror")))
+corrplot(cor(tmp, use="complete.obs"), type="lower")
+
+##############################最终的code######################
+#把两个data frame 合并，然后得出一个abslogerror的new feature
+wholedata<-merge(properties,transactions,by='id_parcel')%>%mutate(abslogerror=abs(logerror))
+#num and logerror的corrplot.
+num<-good_feature%>%spread(key='features',value='missing_pro')%>%select(contains('num'))%>%colnames()
+num1<-wholedata%>%select(one_of(num,'logerror'))
+num_corplot1<-corrplot(cor(num1,use='complete.obs'),type='lower')
+#area and logerror的corrplot.
+area<-good_feature%>%spread(key='features',value='missing_pro')%>%select(contains('area'))%>%colnames()
+area1<-wholedata%>%select(one_of(area,'logerror'))
+area_corplot1<-area1%>%cor(use='complete.obs')%>%corrplot(type='lower')
+#tax and logerror的corrplot.
+tax<-good_feature%>%spread(key='features',value='missing_pro')%>%select(contains('tax'))%>%colnames()
+tax1<-wholedata%>%select(one_of(tax,'logerror'))%>%select(-tax_year)
+tax_corplot1<-tax1%>%cor(use='complete.obs')%>%corrplot(type='lower')
+#num and abslogerror的corrplot.
+num2<-wholedata%>%select(one_of(num,'abslogerror'))
+num_corplot2<-corrplot(cor(num2,use='complete.obs'),type = 'lower')
+#area and abslogerror的corrplot
+area2<-wholedata%>%select(one_of(area,'abslogerror'))
+area_corrplot2<-corrplot(cor(area2,use='complete.obs'),type = 'lower')
+#tax and abslogerror的corrplot
+tax2<-wholedata%>%select(one_of(tax,'abslogerror'))%>%select(-tax_year)
+tax_corplot2<-corrplot(cor(tax2,use='complete.obs'),type='lower')
+
+
+
+总结：
+1.要画出来correlation matrix，首先要有相应的数据，然后根据数据得到correlation matrix，再根据correlation matrix画出corrleation的图。
+2.为了得到相应的数据，如：包含num的数据，有不同的写法。
+  我自己的写法：
+  num<-good_feature%>%spread(key='features',value='missing_pro')%>%select(contains('num'))
+  num_data<-wholedata[,colnames(wholedata)%in%colnames(num)]
+  因为通过之前的计算之后，我们得到了一个叫good_feature的data frame,第一列为features,第二列为missing_pro。我们希望能够把features这列中包含num字符的
+feature选出来。我的做法是用tidyr的spread function，把Long format data frame变成了wide format。这样就可以通过select(contains('num'))然后选择包含
+num的feature。最后用bind_cols()的用法来加上logerror或者abslogerror，最后计算出correlation matrxi进而画图。
+  别人的写法：
+  vars <- good_features$feature[str_detect(good_features$feature,'num_')]
+  cor_tmp <- transactions %>% left_join(properties, by="id_parcel") 
+  tmp <- cor_tmp %>% select(one_of(c(vars,"abs_logerror")))
+3.code写法总结：
+   （1）cbind 可以用bind_cols()来实现，这样就可以用piping的方法接着处理数据。
+   （2）select(one_of()):这个方法可以把我们想要的num选出来，然后再加上特定的一些variable.
+    (3) corrplot(cor()):首先让我们做一个corrleation matrix，然后再画一个corrplot.
+    (4) wholedata[,colnames(wholedata)=='abslogerror']可以用select()的方法来实现。
+4.corrplot()这个package的用法：
+    （1）首先要用cor这个function来建立一个correlation matrxix.但是因为数据本身有空值，如果不对相应参数进行设定，那么基本上correlation matrix的很多
+数值都是空值。空值的处理方法：use='complete.obs'就会把出现空值的整个row都去掉/ use='pairwise.complete.obs' only uses the non NAs when computing
+the correlation between v1 and v2.
+     (2)corrplot package几个重要的用法：
+     methods/type/corrplot.mixed()/order
+     methods:用于确定要画什么形状的图形。我们可以用methods='circle',methods='square',methods='ellipse',methods='number',methods='shade',
+methods='color',methods='pie'来确定我们想画的是圆形，还是正方形或者椭圆或者数字等。default is "circle"
+    type:用于确定要画的correlation plot是全的还是上半部分或者是下半部分。type='full'/'upper'/'lower'.default is 'full'.
+    corrplot.mixed():就是对上半部分和下半部分可以分开不同的图形。如：corrplot(x,upper='number',lower='circle')
+    order的用法可以对hidden structure and pattern进行画图。 
+     
+  
